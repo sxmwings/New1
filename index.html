@@ -1,0 +1,900 @@
+import React, { useState, useEffect } from 'react';
+import { Calendar, TrendingUp, Dumbbell, Clock, CheckCircle, BarChart3, Settings, Play, Pause, ChevronRight, Award, Flame } from 'lucide-react';
+
+// Programme complet
+const PROGRAM = {
+  weeks: 26,
+  deloads: [6, 12, 18, 24, 26],
+  sessions: {
+    dimanche: {
+      name: "DOS + JAMBES LOURDES + BRAS",
+      duration: 68,
+      exercises: [
+        { id: 1, name: "Trap Bar Deadlift", sets: 5, reps: "6-8", rest: 120, startWeight: 75, progression: 5, progressionWeeks: 3, type: "compound" },
+        { id: 2, name: "Goblet Squat", sets: 4, reps: "10", rest: 75, startWeight: 25, progression: 2.5, progressionWeeks: 2, type: "compound" },
+        { id: 3, name: "Leg Press", sets: 4, reps: "10", rest: 75, startWeight: 110, progression: 10, progressionWeeks: 2, type: "compound" },
+        { id: 4, name: "Lat Pulldown (prise large)", sets: 4, reps: "10", rest: 90, startWeight: 60, progression: 2.5, progressionWeeks: 2, type: "superset", supersetWith: 5 },
+        { id: 5, name: "Landmine Press", sets: 4, reps: "10", rest: 90, startWeight: 35, progression: 2.5, progressionWeeks: 2, type: "superset" },
+        { id: 6, name: "Rowing Machine (prise large)", sets: 4, reps: "10", rest: 75, startWeight: 50, progression: 2.5, progressionWeeks: 2, type: "compound" },
+        { id: 7, name: "Spider/Incline Curl", sets: 4, reps: "12", rest: 75, startWeight: 12, progression: 2.5, progressionWeeks: 3, type: "superset", supersetWith: 8 },
+        { id: 8, name: "Cable Pushdown", sets: 3, reps: "12", rest: 75, startWeight: 20, progression: 2.5, progressionWeeks: 3, type: "superset" }
+      ]
+    },
+    mardi: {
+      name: "PECS + ÉPAULES + TRICEPS",
+      duration: 70,
+      exercises: [
+        { id: 9, name: "Dumbbell Press", sets: 5, reps: "10", rest: 105, startWeight: 22, progression: 2.5, progressionWeeks: 3, type: "compound" },
+        { id: 10, name: "Cable Fly (poulies moyennes)", sets: 4, reps: "12", rest: 60, startWeight: 10, progression: 2.5, progressionWeeks: 3, type: "isolation" },
+        { id: 11, name: "Leg Press léger", sets: 3, reps: "15", rest: 60, startWeight: 80, progression: 10, progressionWeeks: 3, type: "compound" },
+        { id: 12, name: "Extension Triceps Corde", sets: 5, reps: "12", rest: 75, startWeight: 20, progression: 2.5, progressionWeeks: 3, type: "superset", supersetWith: 13 },
+        { id: 13, name: "Lateral Raises", sets: 5, reps: "15", rest: 75, startWeight: 8, progression: 2.5, progressionWeeks: 4, type: "superset" },
+        { id: 14, name: "Face Pull", sets: 5, reps: "15", rest: 60, startWeight: 20, progression: 2.5, progressionWeeks: 3, type: "isolation" },
+        { id: 15, name: "Rowing Machine (prise serrée)", sets: 4, reps: "12", rest: 75, startWeight: 50, progression: 2.5, progressionWeeks: 2, type: "compound" },
+        { id: 16, name: "Overhead Extension", sets: 4, reps: "12", rest: 60, startWeight: 15, progression: 2.5, progressionWeeks: 3, type: "isolation" }
+      ]
+    },
+    vendredi: {
+      name: "DOS + JAMBES LÉGÈRES + BRAS + ÉPAULES",
+      duration: 73,
+      exercises: [
+        { id: 17, name: "Landmine Row", sets: 5, reps: "10", rest: 105, startWeight: 55, progression: 2.5, progressionWeeks: 2, type: "compound" },
+        { id: 18, name: "Leg Curl", sets: 5, reps: "12", rest: 75, startWeight: 40, progression: 5, progressionWeeks: 3, type: "superset", supersetWith: 19 },
+        { id: 19, name: "Leg Extension", sets: 4, reps: "15", rest: 75, startWeight: 35, progression: 5, progressionWeeks: 3, type: "superset" },
+        { id: 20, name: "Cable Fly", sets: 4, reps: "15", rest: 60, startWeight: 10, progression: 2.5, progressionWeeks: 3, type: "superset", supersetWith: 21 },
+        { id: 21, name: "Dumbbell Fly", sets: 4, reps: "12", rest: 60, startWeight: 10, progression: 2.5, progressionWeeks: 3, type: "superset" },
+        { id: 22, name: "EZ Bar Curl", sets: 5, reps: "12", rest: 75, startWeight: 25, progression: 2.5, progressionWeeks: 3, type: "superset", supersetWith: 23 },
+        { id: 23, name: "Overhead Extension", sets: 3, reps: "12", rest: 75, startWeight: 15, progression: 2.5, progressionWeeks: 3, type: "superset" },
+        { id: 24, name: "Lateral Raises", sets: 3, reps: "15", rest: 60, startWeight: 8, progression: 2.5, progressionWeeks: 4, type: "isolation" },
+        { id: 25, name: "Wrist Curl", sets: 3, reps: "20", rest: 45, startWeight: 30, progression: 2.5, progressionWeeks: 4, type: "isolation" }
+      ]
+    }
+  },
+  blocks: {
+    1: { weeks: [1,2,3,4,5], name: "FONDATION TECHNIQUE", rpe: "6-7", tempo: "3-1-2", techniques: "Pauses stratégiques" },
+    2: { weeks: [7,8,9,10,11], name: "SURCHARGE PROGRESSIVE", rpe: "7-8", tempo: "2-1-2", techniques: "Rest-Pause" },
+    3: { weeks: [13,14,15,16,17], name: "SURCOMPENSATION", rpe: "8", tempo: "2-1-2", techniques: "Drop-sets + Myo-reps" },
+    4: { weeks: [19,20,21,22,23,25], name: "INTENSIFICATION MAX", rpe: "8-9", tempo: "2-1-2", techniques: "Clusters + Myo-reps + Partials" }
+  }
+};
+
+const App = () => {
+  const [currentWeek, setCurrentWeek] = useState(1);
+  const [activeTab, setActiveTab] = useState('workout');
+  const [activeSession, setActiveSession] = useState(null);
+  const [workoutData, setWorkoutData] = useState({});
+  const [timer, setTimer] = useState(0);
+  const [timerRunning, setTimerRunning] = useState(false);
+  const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+  const [completedSets, setCompletedSets] = useState({});
+
+  // Calculer le bloc actuel
+  const getCurrentBlock = () => {
+    for (const [blockNum, block] of Object.entries(PROGRAM.blocks)) {
+      if (block.weeks.includes(currentWeek)) return { num: blockNum, ...block };
+    }
+    return { num: 1, ...PROGRAM.blocks[1] };
+  };
+
+  const currentBlock = getCurrentBlock();
+  const isDeload = PROGRAM.deloads.includes(currentWeek);
+
+  // Calculer le poids pour un exercice
+  const calculateWeight = (exercise) => {
+    const weeksPassed = currentWeek - 1;
+    const progressionCycles = Math.floor(weeksPassed / exercise.progressionWeeks);
+    let weight = exercise.startWeight + (progressionCycles * exercise.progression);
+    
+    if (isDeload) {
+      weight = Math.round(weight * 0.6 * 10) / 10; // -40%
+    }
+    
+    return weight;
+  };
+
+  // Sauvegarder données
+  useEffect(() => {
+    const saveData = async () => {
+      try {
+        await window.storage.set('workout-data', JSON.stringify(workoutData));
+        await window.storage.set('current-week', currentWeek.toString());
+        await window.storage.set('completed-sets', JSON.stringify(completedSets));
+      } catch (error) {
+        console.log('Storage not available:', error);
+      }
+    };
+    saveData();
+  }, [workoutData, currentWeek, completedSets]);
+
+  // Charger données
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const savedData = await window.storage.get('workout-data');
+        const savedWeek = await window.storage.get('current-week');
+        const savedSets = await window.storage.get('completed-sets');
+        
+        if (savedData?.value) setWorkoutData(JSON.parse(savedData.value));
+        if (savedWeek?.value) setCurrentWeek(parseInt(savedWeek.value));
+        if (savedSets?.value) setCompletedSets(JSON.parse(savedSets.value));
+      } catch (error) {
+        console.log('No saved data');
+      }
+    };
+    loadData();
+  }, []);
+
+  // Timer
+  useEffect(() => {
+    let interval;
+    if (timerRunning && timer > 0) {
+      interval = setInterval(() => {
+        setTimer(t => {
+          if (t <= 1) {
+            setTimerRunning(false);
+            return 0;
+          }
+          return t - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [timerRunning, timer]);
+
+  const startSession = (sessionKey) => {
+    setActiveSession(sessionKey);
+    setCurrentExerciseIndex(0);
+    setCompletedSets({});
+    setActiveTab('active');
+  };
+
+  const completeSet = (exerciseId, setNum, weight, reps) => {
+    const key = `${exerciseId}-${setNum}`;
+    const newCompleted = { ...completedSets, [key]: { weight, reps, rpe: 7 } };
+    setCompletedSets(newCompleted);
+
+    // Démarrer timer de repos
+    const session = PROGRAM.sessions[activeSession];
+    const exercise = session.exercises.find(e => e.id === exerciseId);
+    if (exercise) {
+      setTimer(exercise.rest);
+      setTimerRunning(true);
+    }
+
+    // Sauvegarder la séance
+    const date = new Date().toISOString().split('T')[0];
+    const sessionData = workoutData[date] || {};
+    sessionData[exerciseId] = sessionData[exerciseId] || [];
+    sessionData[exerciseId].push({ set: setNum, weight, reps, rpe: 7 });
+    setWorkoutData({ ...workoutData, [date]: sessionData });
+  };
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Stats
+  const getTotalWorkouts = () => Object.keys(workoutData).length;
+  const getWeekProgress = () => Math.round((currentWeek / PROGRAM.weeks) * 100);
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%)',
+      color: '#fff',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif',
+      paddingBottom: '80px'
+    }}>
+      {/* Header */}
+      <div style={{
+        background: 'rgba(255,255,255,0.05)',
+        backdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(255,255,255,0.1)',
+        padding: '20px',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: '28px', fontWeight: '700', letterSpacing: '-0.5px' }}>
+              💪 Hybrid Master 51
+            </h1>
+            <p style={{ margin: '4px 0 0', color: '#888', fontSize: '14px' }}>
+              Semaine {currentWeek}/26 • Bloc {currentBlock.num} - {currentBlock.name}
+            </p>
+          </div>
+          <div style={{
+            background: isDeload ? '#ff6b35' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            padding: '8px 16px',
+            borderRadius: '20px',
+            fontSize: '12px',
+            fontWeight: '600',
+            boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)'
+          }}>
+            {isDeload ? '🔄 DELOAD' : `🎯 RPE ${currentBlock.rpe}`}
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation */}
+      {activeTab !== 'active' && (
+        <div style={{
+          display: 'flex',
+          gap: '8px',
+          padding: '16px 20px',
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch'
+        }}>
+          {['workout', 'stats', 'progress'].map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                flex: '1',
+                minWidth: '100px',
+                padding: '12px 20px',
+                background: activeTab === tab 
+                  ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                  : 'rgba(255,255,255,0.05)',
+                border: activeTab === tab ? 'none' : '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '16px',
+                color: '#fff',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                boxShadow: activeTab === tab ? '0 4px 15px rgba(102, 126, 234, 0.4)' : 'none'
+              }}
+            >
+              {tab === 'workout' && '🏋️ Séances'}
+              {tab === 'stats' && '📊 Stats'}
+              {tab === 'progress' && '📈 Progrès'}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Content */}
+      <div style={{ padding: '0 20px' }}>
+        {/* Workout Tab */}
+        {activeTab === 'workout' && !activeSession && (
+          <div>
+            {/* Week Selector */}
+            <div style={{
+              background: 'rgba(255,255,255,0.05)',
+              borderRadius: '20px',
+              padding: '20px',
+              marginBottom: '20px',
+              border: '1px solid rgba(255,255,255,0.1)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <span style={{ fontSize: '14px', color: '#888' }}>Semaine actuelle</span>
+                <span style={{ fontSize: '20px', fontWeight: '700' }}>{currentWeek}</span>
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="26"
+                value={currentWeek}
+                onChange={(e) => setCurrentWeek(parseInt(e.target.value))}
+                style={{
+                  width: '100%',
+                  height: '6px',
+                  background: `linear-gradient(to right, #667eea 0%, #667eea ${getWeekProgress()}%, rgba(255,255,255,0.1) ${getWeekProgress()}%, rgba(255,255,255,0.1) 100%)`,
+                  borderRadius: '3px',
+                  outline: 'none',
+                  appearance: 'none'
+                }}
+              />
+            </div>
+
+            {/* Sessions */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {Object.entries(PROGRAM.sessions).map(([key, session]) => (
+                <div
+                  key={key}
+                  onClick={() => startSession(key)}
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%)',
+                    borderRadius: '24px',
+                    padding: '24px',
+                    cursor: 'pointer',
+                    border: '1px solid rgba(102, 126, 234, 0.3)',
+                    transition: 'all 0.3s ease',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-4px)';
+                    e.currentTarget.style.boxShadow = '0 12px 40px rgba(102, 126, 234, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  <div style={{
+                    position: 'absolute',
+                    top: '-50%',
+                    right: '-10%',
+                    width: '200px',
+                    height: '200px',
+                    background: 'radial-gradient(circle, rgba(102, 126, 234, 0.2) 0%, transparent 70%)',
+                    borderRadius: '50%'
+                  }} />
+                  
+                  <div style={{ position: 'relative', zIndex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                      <div>
+                        <div style={{
+                          display: 'inline-block',
+                          background: 'rgba(102, 126, 234, 0.3)',
+                          padding: '4px 12px',
+                          borderRadius: '12px',
+                          fontSize: '11px',
+                          fontWeight: '600',
+                          marginBottom: '8px',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}>
+                          {key}
+                        </div>
+                        <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '700' }}>
+                          {session.name}
+                        </h3>
+                      </div>
+                      <ChevronRight size={24} style={{ opacity: 0.5 }} />
+                    </div>
+                    
+                    <div style={{ display: 'flex', gap: '20px', marginTop: '16px', fontSize: '13px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa' }}>
+                        <Dumbbell size={16} />
+                        <span>{session.exercises.length} exercices</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa' }}>
+                        <Clock size={16} />
+                        <span>{session.duration} min</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa' }}>
+                        <Flame size={16} />
+                        <span>{session.exercises.reduce((acc, e) => acc + e.sets, 0)} séries</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Active Session */}
+        {activeTab === 'active' && activeSession && (
+          <div>
+            {/* Timer Card */}
+            {timer > 0 && (
+              <div style={{
+                background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                borderRadius: '24px',
+                padding: '24px',
+                marginBottom: '20px',
+                textAlign: 'center',
+                boxShadow: '0 8px 32px rgba(245, 87, 108, 0.4)'
+              }}>
+                <div style={{ fontSize: '14px', marginBottom: '8px', opacity: 0.9 }}>
+                  Repos restant
+                </div>
+                <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '12px' }}>
+                  {formatTime(timer)}
+                </div>
+                <button
+                  onClick={() => setTimerRunning(!timerRunning)}
+                  style={{
+                    background: 'rgba(255,255,255,0.2)',
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '8px 20px',
+                    color: '#fff',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    margin: '0 auto'
+                  }}
+                >
+                  {timerRunning ? <Pause size={16} /> : <Play size={16} />}
+                  {timerRunning ? 'Pause' : 'Reprendre'}
+                </button>
+              </div>
+            )}
+
+            {/* Exercises */}
+            {PROGRAM.sessions[activeSession].exercises.map((exercise, idx) => {
+              const weight = calculateWeight(exercise);
+              const isSuperset = exercise.type === 'superset';
+              
+              return (
+                <div
+                  key={exercise.id}
+                  style={{
+                    background: idx === currentExerciseIndex 
+                      ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%)'
+                      : 'rgba(255,255,255,0.05)',
+                    borderRadius: '20px',
+                    padding: '20px',
+                    marginBottom: '12px',
+                    border: idx === currentExerciseIndex 
+                      ? '2px solid #667eea'
+                      : '1px solid rgba(255,255,255,0.1)'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <div>
+                      {isSuperset && (
+                        <div style={{
+                          display: 'inline-block',
+                          background: '#ff6b35',
+                          padding: '2px 8px',
+                          borderRadius: '8px',
+                          fontSize: '10px',
+                          fontWeight: '600',
+                          marginBottom: '6px'
+                        }}>
+                          SUPERSET
+                        </div>
+                      )}
+                      <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>
+                        {exercise.name}
+                      </h4>
+                      <div style={{ fontSize: '13px', color: '#888', marginTop: '4px' }}>
+                        {exercise.sets} × {exercise.reps} • {weight} kg • {exercise.rest}s repos
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sets */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {[...Array(exercise.sets)].map((_, setNum) => {
+                      const setKey = `${exercise.id}-${setNum + 1}`;
+                      const isCompleted = completedSets[setKey];
+                      
+                      return (
+                        <button
+                          key={setNum}
+                          onClick={() => {
+                            if (!isCompleted) {
+                              completeSet(exercise.id, setNum + 1, weight, parseInt(exercise.reps));
+                            }
+                          }}
+                          style={{
+                            background: isCompleted 
+                              ? 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'
+                              : 'rgba(255,255,255,0.08)',
+                            border: 'none',
+                            borderRadius: '12px',
+                            padding: '12px 16px',
+                            color: '#fff',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            transition: 'all 0.3s ease'
+                          }}
+                        >
+                          <span>Série {setNum + 1}</span>
+                          <span>
+                            {isCompleted 
+                              ? `✓ ${isCompleted.weight} kg × ${isCompleted.reps}`
+                              : `${weight} kg × ${exercise.reps}`
+                            }
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Technique d'intensification */}
+                  {currentBlock.num > 1 && (
+                    <div style={{
+                      marginTop: '12px',
+                      padding: '12px',
+                      background: 'rgba(255, 107, 53, 0.1)',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(255, 107, 53, 0.3)',
+                      fontSize: '12px'
+                    }}>
+                      <strong>💥 Technique:</strong> {currentBlock.techniques}
+                      {currentBlock.num === 2 && exercise.sets === 5 && ' (dernière série)'}
+                      {currentBlock.num === 3 && ' (série finale)'}
+                      {currentBlock.num === 4 && ' (toutes isolations)'}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Complete Session Button */}
+            <button
+              onClick={() => {
+                setActiveSession(null);
+                setActiveTab('workout');
+              }}
+              style={{
+                width: '100%',
+                background: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+                border: 'none',
+                borderRadius: '16px',
+                padding: '16px',
+                color: '#fff',
+                fontSize: '16px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                marginTop: '20px',
+                boxShadow: '0 8px 32px rgba(56, 239, 125, 0.4)'
+              }}
+            >
+              ✓ Terminer la séance
+            </button>
+          </div>
+        )}
+
+        {/* Stats Tab */}
+        {activeTab === 'stats' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(17, 153, 142, 0.15) 0%, rgba(56, 239, 125, 0.15) 100%)',
+              borderRadius: '20px',
+              padding: '24px',
+              border: '1px solid rgba(56, 239, 125, 0.3)'
+            }}>
+              <div style={{ fontSize: '14px', color: '#888', marginBottom: '8px' }}>
+                Séances complétées
+              </div>
+              <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '4px' }}>
+                {getTotalWorkouts()}
+              </div>
+              <div style={{ fontSize: '13px', color: '#38ef7d' }}>
+                🔥 Continue comme ça !
+              </div>
+            </div>
+
+            <div style={{
+              background: 'rgba(255,255,255,0.05)',
+              borderRadius: '20px',
+              padding: '24px',
+              border: '1px solid rgba(255,255,255,0.1)'
+            }}>
+              <div style={{ fontSize: '14px', color: '#888', marginBottom: '8px' }}>
+                Progression du programme
+              </div>
+              <div style={{ fontSize: '48px', fontWeight: '700', marginBottom: '4px' }}>
+                {getWeekProgress()}%
+              </div>
+              <div style={{ fontSize: '13px', color: '#667eea' }}>
+                Semaine {currentWeek} / 26
+              </div>
+            </div>
+
+            <div style={{
+              background: 'rgba(255,255,255,0.05)',
+              borderRadius: '20px',
+              padding: '24px',
+              border: '1px solid rgba(255,255,255,0.1)'
+            }}>
+              <h3 style={{ margin: '0 0 16px', fontSize: '18px', fontWeight: '700' }}>Bloc actuel</h3>
+              <div style={{ fontSize: '24px', fontWeight: '700', color: '#667eea', marginBottom: '8px' }}>
+                Bloc {currentBlock.num} - {currentBlock.name}
+              </div>
+              <div style={{ fontSize: '14px', color: '#888', marginBottom: '12px' }}>
+                RPE cible: {currentBlock.rpe} • Tempo: {currentBlock.tempo}
+              </div>
+              <div style={{
+                background: 'rgba(102, 126, 234, 0.1)',
+                padding: '12px',
+                borderRadius: '12px',
+                fontSize: '13px'
+              }}>
+                💡 {currentBlock.techniques}
+              </div>
+            </div>
+
+            <div style={{
+              background: 'rgba(255,255,255,0.05)',
+              borderRadius: '20px',
+              padding: '24px',
+              border: '1px solid rgba(255,255,255,0.1)'
+            }}>
+              <h3 style={{ margin: '0 0 16px', fontSize: '18px', fontWeight: '700' }}>Prochains deloads</h3>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {PROGRAM.deloads.filter(w => w >= currentWeek).slice(0, 3).map(week => (
+                  <div
+                    key={week}
+                    style={{
+                      background: week === currentWeek ? '#ff6b35' : 'rgba(255, 107, 53, 0.2)',
+                      padding: '8px 16px',
+                      borderRadius: '12px',
+                      fontSize: '13px',
+                      fontWeight: '600'
+                    }}
+                  >
+                    Semaine {week}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Progress Tab */}
+        {activeTab === 'progress' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{
+              background: 'rgba(255,255,255,0.05)',
+              borderRadius: '20px',
+              padding: '24px',
+              border: '1px solid rgba(255,255,255,0.1)'
+            }}>
+              <h3 style={{ margin: '0 0 16px', fontSize: '18px', fontWeight: '700' }}>
+                🎯 Objectifs à 26 semaines
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {[
+                  { label: 'Masse maigre', target: '+4.5 à 5.5 kg', icon: '💪' },
+                  { label: 'Tour de bras', target: '+2.5 à 3 cm', icon: '📏' },
+                  { label: 'Tour de poitrine', target: '+3.5 à 4 cm', icon: '📐' },
+                  { label: 'Trap Bar DL', target: '120 kg × 6', icon: '🏋️' },
+                  { label: 'Dumbbell Press', target: '45 kg × 10', icon: '🔥' }
+                ].map((goal, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '12px',
+                      background: 'rgba(102, 126, 234, 0.1)',
+                      borderRadius: '12px'
+                    }}
+                  >
+                    <span style={{ fontSize: '14px' }}>
+                      {goal.icon} {goal.label}
+                    </span>
+                    <span style={{ fontSize: '14px', fontWeight: '700', color: '#667eea' }}>
+                      {goal.target}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{
+              background: 'rgba(255,255,255,0.05)',
+              borderRadius: '20px',
+              padding: '24px',
+              border: '1px solid rgba(255,255,255,0.1)'
+            }}>
+              <h3 style={{ margin: '0 0 16px', fontSize: '18px', fontWeight: '700' }}>
+                📊 Progression des charges
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {Object.entries(PROGRAM.sessions).map(([sessionKey, session]) => (
+                  <div key={sessionKey}>
+                    <div style={{
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      color: '#667eea',
+                      textTransform: 'uppercase',
+                      marginBottom: '8px',
+                      letterSpacing: '0.5px'
+                    }}>
+                      {sessionKey}
+                    </div>
+                    {session.exercises.slice(0, 3).map(exercise => {
+                      const currentWeight = calculateWeight(exercise);
+                      const weeksPassed = currentWeek - 1;
+                      const progressionCycles = Math.floor(weeksPassed / exercise.progressionWeeks);
+                      const finalWeight = exercise.startWeight + (Math.floor((26 - 1) / exercise.progressionWeeks) * exercise.progression);
+                      const progress = ((currentWeight - exercise.startWeight) / (finalWeight - exercise.startWeight)) * 100;
+                      
+                      return (
+                        <div
+                          key={exercise.id}
+                          style={{
+                            padding: '12px',
+                            background: 'rgba(255,255,255,0.05)',
+                            borderRadius: '12px',
+                            marginBottom: '8px'
+                          }}
+                        >
+                          <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            marginBottom: '8px',
+                            fontSize: '13px'
+                          }}>
+                            <span>{exercise.name}</span>
+                            <span style={{ fontWeight: '700' }}>
+                              {currentWeight} kg → {finalWeight} kg
+                            </span>
+                          </div>
+                          <div style={{
+                            width: '100%',
+                            height: '6px',
+                            background: 'rgba(255,255,255,0.1)',
+                            borderRadius: '3px',
+                            overflow: 'hidden'
+                          }}>
+                            <div style={{
+                              width: `${Math.min(progress, 100)}%`,
+                              height: '100%',
+                              background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
+                              borderRadius: '3px',
+                              transition: 'width 0.3s ease'
+                            }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(255, 107, 53, 0.15) 0%, rgba(245, 87, 108, 0.15) 100%)',
+              borderRadius: '20px',
+              padding: '24px',
+              border: '1px solid rgba(255, 107, 53, 0.3)'
+            }}>
+              <h3 style={{ margin: '0 0 16px', fontSize: '18px', fontWeight: '700' }}>
+                ⚠️ Règles d'or
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                  <span>✓</span>
+                  <span>Technique > Charge TOUJOURS</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                  <span>✓</span>
+                  <span>Douleur articulaire = STOP immédiat</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                  <span>✓</span>
+                  <span>Sommeil 7h30+ non négociable</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                  <span>✓</span>
+                  <span>Protéines 2g/kg quotidien</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                  <span>✓</span>
+                  <span>Deloads obligatoires (pas optionnels)</span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{
+              background: 'rgba(255,255,255,0.05)',
+              borderRadius: '20px',
+              padding: '24px',
+              border: '1px solid rgba(255,255,255,0.1)'
+            }}>
+              <h3 style={{ margin: '0 0 16px', fontSize: '18px', fontWeight: '700' }}>
+                💊 Supplémentation
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
+                {[
+                  { name: 'Créatine Monohydrate', dose: '5g/jour', timing: 'Post-training' },
+                  { name: 'Collagène', dose: '10g/jour', timing: 'Matin à jeun' },
+                  { name: 'Oméga-3 (EPA/DHA)', dose: '3g/jour', timing: 'Avec repas' },
+                  { name: 'Vitamine D3', dose: '4000 UI/jour', timing: 'Matin' },
+                  { name: 'ZMA', dose: 'Selon étiquette', timing: '30 min avant coucher' },
+                  { name: 'Whey Isolate', dose: '30g', timing: 'Post-training immédiat' }
+                ].map((supp, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      padding: '10px',
+                      background: 'rgba(102, 126, 234, 0.1)',
+                      borderRadius: '10px'
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: '600', marginBottom: '2px' }}>{supp.name}</div>
+                      <div style={{ fontSize: '11px', color: '#888' }}>{supp.timing}</div>
+                    </div>
+                    <div style={{ fontWeight: '700', color: '#667eea' }}>{supp.dose}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Bottom Navigation */}
+      {activeTab !== 'active' && (
+        <div style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          background: 'rgba(10, 10, 10, 0.95)',
+          backdropFilter: 'blur(20px)',
+          borderTop: '1px solid rgba(255,255,255,0.1)',
+          padding: '12px 20px 24px',
+          display: 'flex',
+          justifyContent: 'space-around',
+          zIndex: 100
+        }}>
+          {[
+            { icon: Dumbbell, label: 'Séances', tab: 'workout' },
+            { icon: BarChart3, label: 'Stats', tab: 'stats' },
+            { icon: TrendingUp, label: 'Progrès', tab: 'progress' }
+          ].map(({ icon: Icon, label, tab }) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: activeTab === tab ? '#667eea' : '#666',
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '11px',
+                fontWeight: '600',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              <Icon size={24} strokeWidth={activeTab === tab ? 2.5 : 2} />
+              <span>{label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Back Button for Active Session */}
+      {activeTab === 'active' && (
+        <button
+          onClick={() => {
+            setActiveSession(null);
+            setActiveTab('workout');
+          }}
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            left: '20px',
+            background: 'rgba(255,255,255,0.1)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            borderRadius: '50%',
+            width: '56px',
+            height: '56px',
+            color: '#fff',
+            fontSize: '24px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+            zIndex: 100
+          }}
+        >
+          ←
+        </button>
+      )}
+    </div>
+  );
+};
+
+export default App;
